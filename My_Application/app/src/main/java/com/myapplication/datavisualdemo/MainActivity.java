@@ -1,0 +1,197 @@
+package com.myapplication.datavisualdemo;
+
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Color;
+import android.support.v4.app.Fragment;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.FrameLayout;
+import android.widget.ListView;
+import android.widget.TextView;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import lecho.lib.hellocharts.model.ChartData;
+import lecho.lib.hellocharts.model.ColumnChartData;
+import lecho.lib.hellocharts.model.Line;
+import lecho.lib.hellocharts.model.LineChartData;
+import lecho.lib.hellocharts.model.PointValue;
+import lecho.lib.hellocharts.view.AbstractChartView;
+import lecho.lib.hellocharts.view.Chart;
+import lecho.lib.hellocharts.view.LineChartView;
+import lecho.lib.hellocharts.gesture.ZoomType;
+import lecho.lib.hellocharts.model.Axis;
+import lecho.lib.hellocharts.gesture.ZoomType.*;
+
+//import lecho.lib.hellocharts.gesture.ZoomType.HORIZONTAL;
+
+import static lecho.lib.hellocharts.gesture.ZoomType.HORIZONTAL;
+
+public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        if (savedInstanceState == null) {
+            getSupportFragmentManager().beginTransaction().add(R.id.container, new PlaceholderFragment()).commit();
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+        if (id == R.id.action_about) {
+
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    public enum ChartType {
+        LINE_CHART, COLUMN_CHART, PIE_CHART, BUBBLE_CHART, PREVIEW_LINE_CHART, PREVIEW_COLUMN_CHART, OTHER
+    }
+
+    /**
+     * A placeholder fragment containing a simple view.
+     */
+    public static class PlaceholderFragment extends Fragment implements AdapterView.OnItemClickListener {
+
+        private ListView listView;
+        private ChartSamplesAdapter adapter;
+
+        public PlaceholderFragment() {
+        }
+
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+            View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+            listView = (ListView) rootView.findViewById(android.R.id.list);
+            adapter = new ChartSamplesAdapter(getActivity(), 0, generateSamplesDescriptions());
+            listView.setAdapter(adapter);
+            listView.setOnItemClickListener(this);
+            return rootView;
+        }
+
+        @Override
+        public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
+            Intent intent;
+
+            switch (position) {
+                case 0:
+                    // Line Chart;
+                    intent = new Intent(getActivity(), LineChartActivity.class);
+                    startActivity(intent);
+                    break;
+                case 1:
+                    // Good Bad filled line chart;
+                    intent = new Intent(getActivity(), ViewPagerChartsActivity.class);
+                    startActivity(intent);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        private List<ChartSampleDescription> generateSamplesDescriptions() {
+            List<ChartSampleDescription> list = new ArrayList<MainActivity.ChartSampleDescription>();
+
+            list.add(new ChartSampleDescription("Line Chart", "", ChartType.LINE_CHART));
+
+            list.add(new ChartSampleDescription("ViewPager with Charts",
+                    "Interactive charts within ViewPager. Each chart can be zoom/scroll except pie chart.",
+                    ChartType.OTHER));
+
+            return list;
+        }
+    }
+
+    public static class ChartSamplesAdapter extends ArrayAdapter<ChartSampleDescription> {
+
+        public ChartSamplesAdapter(Context context, int resource, List<ChartSampleDescription> objects) {
+            super(context, resource, objects);
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            ViewHolder holder;
+
+            if (convertView == null) {
+                convertView = View.inflate(getContext(), R.layout.list_item_sample, null);
+
+                holder = new ViewHolder();
+                holder.text1 = (TextView) convertView.findViewById(R.id.text1);
+                holder.text2 = (TextView) convertView.findViewById(R.id.text2);
+                holder.chartLayout = (FrameLayout) convertView.findViewById(R.id.chart_layout);
+
+                convertView.setTag(holder);
+            } else {
+                holder = (ViewHolder) convertView.getTag();
+            }
+
+            ChartSampleDescription item = getItem(position);
+
+            holder.chartLayout.setVisibility(View.VISIBLE);
+            holder.chartLayout.removeAllViews();
+            AbstractChartView chart;
+            switch (item.chartType) {
+                case LINE_CHART:
+                    chart = new LineChartView(getContext());
+                    holder.chartLayout.addView(chart);
+                    break;
+
+                default:
+                    chart = null;
+                    holder.chartLayout.setVisibility(View.GONE);
+                    break;
+            }
+
+            if (null != chart) {
+                chart.setInteractive(false);// Disable touch handling for chart on the ListView.
+            }
+            holder.text1.setText(item.text1);
+            holder.text2.setText(item.text2);
+
+            return convertView;
+        }
+
+        private class ViewHolder {
+
+            TextView text1;
+            TextView text2;
+            FrameLayout chartLayout;
+        }
+
+    }
+
+    public static class ChartSampleDescription {
+        String text1;
+        String text2;
+        ChartType chartType;
+
+        public ChartSampleDescription(String text1, String text2, ChartType chartType) {
+            this.text1 = text1;
+            this.text2 = text2;
+            this.chartType = chartType;
+        }
+    }
+}
